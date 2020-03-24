@@ -31,7 +31,8 @@ export default {
   },
   methods: {
     handleClick() {
-      this.$store.commit('handleClick', this.index);
+      const payload = { type: 'CLICK_TILE', index: this.index };
+      this.$store.dispatch(payload);
     },
   },
 };
