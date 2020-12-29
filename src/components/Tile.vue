@@ -3,7 +3,8 @@
     <button
       :class="classes"
       @click="handleClick"
-    />
+    >{{ index }}
+  </button>
   </div>
 </template>
 

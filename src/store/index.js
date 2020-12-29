@@ -1,7 +1,7 @@
 import Vue from 'vue';
 import Vuex from 'vuex';
 import tiles from '@/fixtures/tiles';
-// import { getNeighborIndexes, getArrays } from '@/services/tiles';
+import { getNextTiles } from '../services/tiles';
 
 Vue.use(Vuex);
 
@@ -13,12 +13,7 @@ export default new Vuex.Store({
   },
   mutations: {
     ADD_TILE(state, index) {
-      const { tiles: prevTiles, currentPlayer } = state;
-      const nextTiles = prevTiles.map(({ index: i, owner: prevOwner }) => {
-        const owner = i === index ? currentPlayer : prevOwner;
-        return { index: i, owner };
-      });
-      this.state.tiles = nextTiles;
+      this.state.tiles = getNextTiles({ state, index });
     },
     CHANGE_CURRENT_PLAYER(state) {
       const { currentPlayer } = state;
@@ -27,10 +22,8 @@ export default new Vuex.Store({
   },
   actions: {
     CLICK_TILE({ state, commit }, { index }) {
-      if (state.tiles[index].owner !== false) return;
-      // const { sideLength: prevSideLength, tiles: prevTiles } = state;
-      // const neighbors = getNeighborIndexes({ index, sideLength: prevSideLength });
-      // const arrays = getArrays({ index, sideLength: prevSideLength, tiles: prevTiles });
+      const isOwned = state.tiles[index].owner !== false;
+      if (isOwned) return;
       // console.log('vuex click', index, state.currentPlayer);
       // console.log(neighbors);
       // console.log(arrays);
