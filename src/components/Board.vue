@@ -18,7 +18,7 @@ export default {
   },
   computed: {
     tiles() {
-      return this.$store.state.tiles;
+      return this.$store.state.tilesProjection;
     },
     currentPlayer() {
       return this.$store.state.currentPlayer;

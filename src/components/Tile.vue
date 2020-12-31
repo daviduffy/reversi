@@ -32,8 +32,10 @@ export default {
   },
   methods: {
     handleClick() {
-      const payload = { type: 'CLICK_TILE', index: this.index };
-      this.$store.dispatch(payload);
+      if (this.owner === false) {
+        const payload = { index: this.index };
+        this.$store.dispatch('startClickTile', payload);
+      }
     },
   },
 };

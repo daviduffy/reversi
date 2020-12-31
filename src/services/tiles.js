@@ -123,18 +123,23 @@ export const getToChangeIndexes = ({ currentPlayer, index, neighbors, sideLength
   return next.flat();
 };
 
-export const getNextTiles = ({ state, index }) => {
-  const { currentPlayer, sideLength, tiles: prevTiles } = state;
+export const getNextTiles = ({ currentPlayer, index, prevTiles, sideLength }) => {
   const neighbors = getNeighborIndexes({ index, sideLength });
   // eslint-disable-next-line
-  const indexesToChange = getToChangeIndexes({ currentPlayer, index, neighbors, sideLength, tiles: prevTiles });
+  console.log({ neighbors, tiles: prevTiles });
+  const indexesToChange = getToChangeIndexes({
+    currentPlayer,
+    index,
+    neighbors,
+    sideLength,
+    tiles: prevTiles,
+  });
   // const arrays = getArrays({ index, sideLength, tiles: prevTiles });
   // console.log(JSON.parse(JSON.stringify(neighbors)));
   // console.log(JSON.parse(JSON.stringify({
   //   arrays,
   //   indexesToChange,
   // })));
-  console.log({ indexesToChange, neighbors });
   const nextTiles = [...prevTiles];
   // mutate nextTiles directly :|
   [index, ...indexesToChange].forEach((val) => { nextTiles[val].owner = currentPlayer; });

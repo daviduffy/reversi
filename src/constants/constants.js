@@ -1,0 +1,2 @@
+export const CHANGE_CURRENT_PLAYER = 'CHANGE_CURRENT_PLAYER';
+export const CLICK_TILE = 'CLICK_TILE';

@@ -8,6 +8,17 @@
   </div>
 </template>
 
+<script>
+export default {
+  name: 'App',
+  // eslint-disable-next-line
+  beforeMount: function() {
+    this.$store.dispatch('startAppSetup')
+      .then(() => this.$store.dispatch('startReconstituteGame'));
+  },
+};
+</script>
+
 <style lang="scss">
 #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
