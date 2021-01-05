@@ -1,52 +1,52 @@
 import Vue from 'vue';
 import Vuex from 'vuex';
 
-import * as types from '@/constants/constants';
-// import { setDB } from '@/services/localStorage';
+import * as CONSTANTS from '@/constants/constants';
+import { getDB, setDB } from '@/services/localStorage';
 import {
   Event,
-  getTilesProjection,
-  getReconstitutedCurrentPlayer,
+  reconstituteGame,
   apply,
 } from '@/services/eventStream';
 
 Vue.use(Vuex);
 
 export default new Vuex.Store({
-  state: {
-    sideLength: 10,
-    tilesProjection: [],
-    events: [],
-    currentPlayer: 1,
-  },
+  state: { ...CONSTANTS.DEFAULT_STATE },
   mutations: {
-    SET_SIDE_LENGTH() {},
+    SET_SIDE_LENGTH(state, length) {
+      state.length = length;
+    },
     SET_TILES_PROJECTION(state, tilesProjection) {
       state.tilesProjection = tilesProjection;
-      console.log('SET_TILES_PROJECTION', JSON.parse(JSON.stringify(state)));
     },
-    SET_EVENTS() {},
+    SET_EVENTS(state, events) {
+      state.events = events;
+    },
     SET_CURRENT_PLAYER(state, nextPlayer) {
       state.currentPlayer = nextPlayer;
     },
     RECORD_EVENT(state, event) {
       state.events = [...state.events, event];
     },
-    CHANGE_CURRENT_PLAYER(state) {
-      const { currentPlayer } = state;
-      this.state.currentPlayer = currentPlayer === 1 ? 2 : 1;
-    },
   },
   actions: {
-    startAppSetup(/* { state, commit } */) {
-      // use this area to fetch any saved game from localStorage and set state
-      return Promise.resolve('done');
+    // eslint-disable-next-line
+    startAppSetup({ state }) {
+      return getDB()
+        .then(({ events }) => {
+          if (events && events.length > 0) {
+          //   // const restore = confirm('would you like to restore saved game?');
+            state.events = events;
+          }
+          return Promise.resolve('done');
+        });
     },
     startClickTile({ state, dispatch }, protoEvent) {
       const { currentPlayer } = state;
       const nextPlayer = currentPlayer === 1 ? 2 : 1;
-      const clickEvent = new Event({ type: types.CLICK_TILE, currentPlayer, ...protoEvent });
-      const playerChangeEvent = new Event({ type: types.CHANGE_CURRENT_PLAYER, nextPlayer });
+      const clickEvent = new Event({ type: CONSTANTS.CLICK_TILE, currentPlayer, ...protoEvent });
+      const playerChangeEvent = new Event({ type: CONSTANTS.CHANGE_CURRENT_PLAYER, nextPlayer });
       return dispatch('startRecordEvent', clickEvent)
         .then(() => dispatch('startApplyClickTile', clickEvent))
         .then(() => dispatch('startRecordEvent', playerChangeEvent))
@@ -55,33 +55,29 @@ export default new Vuex.Store({
     startApplyClickTile({ state, commit }, event) {
       const { tilesProjection: prevProjection, sideLength } = state;
       const applyFunc = apply[event.type];
-      // TODO: not not allow move to be applied if invalid
       const nextProjection = applyFunc({ prevProjection, event, sideLength });
       commit('SET_TILES_PROJECTION', nextProjection);
     },
     startApplyChangePlayer({ commit }, event) {
       commit('SET_CURRENT_PLAYER', event.nextPlayer);
     },
-    startRecordEvent({ commit }, event) {
+    startRecordEvent({ state, commit }, event) {
       commit('RECORD_EVENT', event);
-      return Promise.resolve();
-      // const { events } = state;
-      // return setDB({ events });
-    },
-    // CLICK_TILE({ state, commit }, { index }) {
-    //   const isOwned = state.tiles[index].owner !== false;
-    //   if (isOwned) return;
-    //   // console.log('vuex click', index, state.currentPlayer);
-    //   // console.log(neighbors);
-    //   // console.log(arrays);
-    //   commit('CLICK_TILE', index);
-    //   commit('CHANGE_CURRENT_PLAYER');
-    // },
-    startReconstituteGame({ state, commit }) {
       const { events } = state;
-      const tilesProjection = getTilesProjection(state);
-      const currentPlayer = getReconstitutedCurrentPlayer(events);
+      return setDB({ events });
+    },
+    startReconstituteGame({ state, commit }) {
+      const { currentPlayer, tilesProjection } = reconstituteGame(state);
+      console.log('startReconstituteGame', { currentPlayer, tilesProjection });
       commit('SET_TILES_PROJECTION', tilesProjection);
+      commit('SET_CURRENT_PLAYER', currentPlayer);
+    },
+    startResetGame({ commit }) {
+      const { sideLength, tilesProjection, events, currentPlayer } = CONSTANTS.DEFAULT_STATE;
+      console.log('startResetGame');
+      commit('SET_SIDE_LENGTH', sideLength);
+      commit('SET_TILES_PROJECTION', tilesProjection);
+      commit('SET_EVENTS', events);
       commit('SET_CURRENT_PLAYER', currentPlayer);
     },
   },

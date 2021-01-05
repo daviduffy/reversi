@@ -1,6 +1,7 @@
 <template>
   <div class="game">
     <div><p>{{ currentPlayer }}</p></div>
+    <div><button @click="reset">reset</button></div>
     <Board />
   </div>
 </template>
@@ -16,7 +17,13 @@ export default {
   },
   computed: {
     currentPlayer() {
+      console.log(JSON.parse(JSON.stringify(this.$store.state)));
       return this.$store.state.currentPlayer === 1 ? 'black' : 'white';
+    },
+  },
+  methods: {
+    reset() {
+      this.$store.dispatch('startResetGame');
     },
   },
 };

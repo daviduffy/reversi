@@ -19,7 +19,7 @@ export const setDB = (updates) => new Promise((res /* rej */) => getDB()
       ...prevState,
       ...updates,
     };
-    console.log({ 'would have saved this': nextState });
-    // window.localStorage[databaseName] = JSON.stringify(nextState);
+    // console.log({ 'would have saved this': nextState });
+    window.localStorage[databaseName] = JSON.stringify(nextState);
     res(nextState);
   }));

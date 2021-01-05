@@ -1,6 +1,5 @@
 import dayjs from 'dayjs';
-import * as types from '@/constants/constants';
-import tiles from '@/fixtures/tiles';
+import * as CONSTANTS from '@/constants/constants';
 import { getNextTiles } from '@/services/tiles';
 import { uuid } from '@/services/utils';
 
@@ -16,22 +15,32 @@ export class Event {
   }
 }
 
-export const getTilesProjection = (/* state */) => {
-  console.log('getTilesProjection');
-  return tiles;
-};
-
-export const getReconstitutedCurrentPlayer = (events) => {
-  const [lastEvent] = events;
-  const nextPlayer = lastEvent ? (lastEvent.currentPlayer || lastEvent.nextPlayer || 1) : 1;
-  return nextPlayer;
-};
-
 export const handleAddTile = ({ prevProjection, event, sideLength }) => {
   const { currentPlayer, index } = event;
   return getNextTiles({ currentPlayer, index, prevTiles: prevProjection, sideLength });
 };
 
+export const handleChangePlayer = ({ nextPlayer }) => nextPlayer;
+
 export const apply = {
-  [types.CLICK_TILE]: handleAddTile,
+  [CONSTANTS.CLICK_TILE]: handleAddTile,
+  [CONSTANTS.CHANGE_CURRENT_PLAYER]: handleChangePlayer,
+};
+
+export const reconstituteGame = (state) => {
+  const { events } = state;
+  let { currentPlayer, tilesProjection } = CONSTANTS.DEFAULT_STATE;
+  events.forEach((event) => {
+    const { type } = event;
+    if (type === CONSTANTS.CLICK_TILE) {
+      tilesProjection = apply[CONSTANTS.CLICK_TILE]({
+        prevProjection: tilesProjection,
+        event,
+        sideLength: state.sideLength,
+      });
+    } else if (type === CONSTANTS.CHANGE_CURRENT_PLAYER) {
+      currentPlayer = event.nextPlayer;
+    }
+  });
+  return { currentPlayer, tilesProjection };
 };
