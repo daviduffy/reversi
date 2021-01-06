@@ -1,5 +1,6 @@
 import dayjs from 'dayjs';
 import * as CONSTANTS from '@/constants/constants';
+import tiles from '@/fixtures/tiles';
 import { getNextTiles } from '@/services/tiles';
 import { uuid } from '@/services/utils';
 
@@ -29,7 +30,9 @@ export const apply = {
 
 export const reconstituteGame = (state) => {
   const { events } = state;
-  let { currentPlayer, tilesProjection } = CONSTANTS.DEFAULT_STATE;
+  let currentPlayer = 1;
+  let tilesProjection = [...tiles];
+  console.log('here');
   events.forEach((event) => {
     const { type } = event;
     if (type === CONSTANTS.CLICK_TILE) {

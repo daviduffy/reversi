@@ -1,8 +1,9 @@
 import Vue from 'vue';
 import Vuex from 'vuex';
 
+import tiles, { getNewTiles } from '@/fixtures/tiles';
 import * as CONSTANTS from '@/constants/constants';
-import { getDB, setDB } from '@/services/localStorage';
+import { getDB, setDB, clearDB } from '@/services/localStorage';
 import {
   Event,
   reconstituteGame,
@@ -12,7 +13,10 @@ import {
 Vue.use(Vuex);
 
 export default new Vuex.Store({
-  state: { ...CONSTANTS.DEFAULT_STATE },
+  state: {
+    ...CONSTANTS.DEFAULT_STATE,
+    tilesProjection: getNewTiles(),
+  },
   mutations: {
     SET_SIDE_LENGTH(state, length) {
       state.length = length;
@@ -66,19 +70,38 @@ export default new Vuex.Store({
       const { events } = state;
       return setDB({ events });
     },
+    startUndo({ state, commit, dispatch }) {
+      const { events } = state;
+      let nextEvents = [...events];
+      const last = events[events.length - 1];
+      // an error occured and last tile couldn't be placed
+      if (last.type === CONSTANTS.CLICK_TILE) {
+        nextEvents.pop();
+      } else {
+        nextEvents = nextEvents.slice(0, nextEvents.length - 2);
+      }
+      dispatch('startResetGame')
+        .then(() => {
+          commit('SET_EVENTS', nextEvents);
+          dispatch('startReconstituteGame');
+        });
+    },
     startReconstituteGame({ state, commit }) {
+      console.log('startReconstituteGame');
       const { currentPlayer, tilesProjection } = reconstituteGame(state);
-      console.log('startReconstituteGame', { currentPlayer, tilesProjection });
+      console.log({ currentPlayer, tilesProjection });
       commit('SET_TILES_PROJECTION', tilesProjection);
       commit('SET_CURRENT_PLAYER', currentPlayer);
     },
     startResetGame({ commit }) {
-      const { sideLength, tilesProjection, events, currentPlayer } = CONSTANTS.DEFAULT_STATE;
+      const { sideLength, events, currentPlayer } = CONSTANTS.DEFAULT_STATE;
+      console.log(JSON.parse(JSON.stringify(tiles)));
       console.log('startResetGame');
       commit('SET_SIDE_LENGTH', sideLength);
-      commit('SET_TILES_PROJECTION', tilesProjection);
+      commit('SET_TILES_PROJECTION', getNewTiles());
       commit('SET_EVENTS', events);
       commit('SET_CURRENT_PLAYER', currentPlayer);
+      clearDB();
     },
   },
   modules: {

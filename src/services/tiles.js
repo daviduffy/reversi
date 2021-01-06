@@ -85,8 +85,11 @@ export const getEquations = (sideLength) => ({
 // eslint-disable-next-line
 export const getToChangeIndexes = ({ currentPlayer, index, neighbors, sideLength, tiles }) => {
   console.log('clicked: ', index);
+  console.log(neighbors);
   // eslint-disable-next-line
   const vectorsToFlip = neighbors.filter(({ index: i }) => {
+    // index is set to false for indexes that are off the edge of the board
+    if (i === false) return false;
     const { owner } = tiles[i];
     // remove edges of the board
     return i !== false
@@ -103,6 +106,7 @@ export const getToChangeIndexes = ({ currentPlayer, index, neighbors, sideLength
     let complete = false;
     do {
       const currTile = tiles[currIndex];
+      console.log(currTile);
       if (currTile.owner === false) {
         break;
       } else if (currTile.owner !== currentPlayer) {
@@ -111,6 +115,7 @@ export const getToChangeIndexes = ({ currentPlayer, index, neighbors, sideLength
         complete = true;
         break;
       } else { break; }
+      console.log('location:', location);
       const nextIndex = equations[location](currIndex);
       if (nextIndex === false) {
         break;
@@ -126,7 +131,7 @@ export const getToChangeIndexes = ({ currentPlayer, index, neighbors, sideLength
 export const getNextTiles = ({ currentPlayer, index, prevTiles, sideLength }) => {
   const neighbors = getNeighborIndexes({ index, sideLength });
   // eslint-disable-next-line
-  console.log({ neighbors, tiles: prevTiles });
+  // console.log({ neighbors, tiles: prevTiles });
   const indexesToChange = getToChangeIndexes({
     currentPlayer,
     index,

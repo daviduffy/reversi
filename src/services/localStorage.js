@@ -6,10 +6,10 @@ export const getDB = () => new Promise((res /* rej */) => {
   try {
     storedState = JSON.parse(prevJSON);
   } catch (err) {
-    console.log('no stored state');
+    // console.log('no stored state');
     storedState = {};
   }
-  console.log({ storedState });
+  // console.log({ storedState });
   res(storedState);
 });
 
@@ -23,3 +23,13 @@ export const setDB = (updates) => new Promise((res /* rej */) => getDB()
     window.localStorage[databaseName] = JSON.stringify(nextState);
     res(nextState);
   }));
+
+export const clearDB = (hard = false) => new Promise((res /* rej */) => {
+  // console.log({ 'would have saved this': nextState });
+  if (hard) {
+    window.localStorage.removeItem(databaseName);
+  } else {
+    window.localStorage[databaseName] = JSON.stringify({ events: [] });
+  }
+  res();
+});
