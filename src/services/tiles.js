@@ -14,61 +14,6 @@ export const getNeighborIndexes = ({ index, sideLength }) => {
   return [lt, t, rt, l, { index, location: 'center' }, r, lb, b, rb];
 };
 
-export const getArrays = ({ index, sideLength, tiles }) => {
-  const colIndex = index % sideLength;
-  const rowIndex = (index - colIndex) / sideLength;
-  const rowStart = rowIndex * sideLength;
-  const horizontal = [...tiles].slice(rowStart, rowStart + sideLength);
-  const vertical = tiles.filter(({ index: i }) => i % sideLength === colIndex);
-  let hltolr = null;
-  let lltohr = null;
-  {
-    // horizontal high left to low right
-    const plus1 = sideLength + 1;
-    let location;
-    let length;
-    if (colIndex === rowIndex) {
-      location = 'centerLine';
-      length = 11;
-    } else if (colIndex > rowIndex) {
-      location = 'highSide';
-      length = (rowIndex - 1) + (sideLength - (colIndex - 1));
-    } else {
-      location = 'lowSide';
-      length = sideLength - (rowIndex - 1) + (colIndex - 1);
-    }
-    const start = location === 'highSide' ? (colIndex - rowIndex) : (rowIndex - colIndex) * 10;
-    // eslint-disable-next-line
-    const indexes = new Array(length).fill(null).map((val, index) => ((index * plus1) + start));
-    hltolr = indexes.map((val) => tiles[val]);
-  }
-  {
-    // horizontal low left to high right
-    lltohr = [];
-    const minus1 = sideLength - 1;
-    let length;
-    let location;
-    if (colIndex + rowIndex === minus1) {
-      location = 'centerLine';
-      length = 11;
-    } else if (colIndex + rowIndex < minus1) {
-      location = 'highSide';
-      length = colIndex + rowIndex + 1;
-    } else {
-      location = 'lowSide';
-      length = (minus1 - colIndex) + 1 + (minus1 - rowIndex);
-    }
-    const lastRowFirstIndex = (sideLength * sideLength) - sideLength;
-    const start = location !== 'lowSide'
-      ? ((colIndex + rowIndex) * 10)
-      : lastRowFirstIndex + ((rowIndex + colIndex) % 10) + 1;
-    // eslint-disable-next-line
-    const indexes = new Array(length).fill(null).map((val, index) => (start - (index * minus1)));
-    lltohr = indexes.map((val) => tiles[val]);
-  }
-  return ({ horizontal, vertical, hltolr, lltohr });
-};
-
 export const getEquations = (sideLength) => ({
   top(curr) { return curr - sideLength >= 0 ? curr - sideLength : false; },
   right(curr) { return (curr + 1) % 10 !== 0 ? curr + 1 : false; },
@@ -82,22 +27,36 @@ export const getEquations = (sideLength) => ({
   leftTop(curr) { return curr - (sideLength + 1); },
 });
 
-// eslint-disable-next-line
-export const getToChangeIndexes = ({ currentPlayer, index, neighbors, sideLength, tiles }) => {
-  console.log('clicked: ', index);
-  console.log(neighbors);
+export const isEdge = ({ sideLength, index, location }) => {
+  const lowerLoc = location.toLowerCase();
+  const onTopEdge = (ind) => ind < sideLength;
+  const onRightEdge = (ind) => (ind + 1) % sideLength === 0;
+  const onBottomEdge = (ind) => ind >= (sideLength * sideLength) - sideLength;
+  const onLeftEdge = (ind) => ind % sideLength === 0;
+
+  return (lowerLoc.includes('top') && onTopEdge(index))
+    || (lowerLoc.includes('right') && onRightEdge(index))
+    || (lowerLoc.includes('bottom') && onBottomEdge(index))
+    || (lowerLoc.includes('left') && onLeftEdge(index));
+};
+
+export const getToChangeIndexes = ({ currentPlayer, neighbors, sideLength, tiles }) => {
   // eslint-disable-next-line
-  const vectorsToFlip = neighbors.filter(({ index: i }) => {
+  const vectorsToFlip = neighbors.filter(({ index: i, location }) => {
     // index is set to false for indexes that are off the edge of the board
     if (i === false) return false;
     const { owner } = tiles[i];
-    // remove edges of the board
+    // remove tiles PAST the edge of the board
+    const tileIsEdge = isEdge({ sideLength, index: i, location });
     return i !== false
       // remove vectors that are unoccupied
       && owner !== false
       // remove vectors owned by the current player
-      && owner !== currentPlayer;
+      && owner !== currentPlayer
+      // remove tiles that ARE edges of the board
+      && !tileIsEdge;
   });
+
   const equations = getEquations(sideLength);
   // eslint-disable-next-line
   const next = vectorsToFlip.map(({ index: i, location }) => {
@@ -106,16 +65,21 @@ export const getToChangeIndexes = ({ currentPlayer, index, neighbors, sideLength
     let complete = false;
     do {
       const currTile = tiles[currIndex];
-      console.log(currTile);
-      if (currTile.owner === false) {
+      // eslint-disable-next-line
+      // currTile && console.log(JSON.parse(JSON.stringify(currTile)));
+      // null safe
+      if (!currTile) {
         break;
+      // can't "flip" an unoccupied tile in this way
+      } else if (currTile.owner === false) {
+        break;
+      // flip tiles that are occupied by the other player
       } else if (currTile.owner !== currentPlayer) {
         indexesToChange = [...indexesToChange, currIndex];
       } else if (currTile.owner === currentPlayer) {
         complete = true;
         break;
       } else { break; }
-      console.log('location:', location);
       const nextIndex = equations[location](currIndex);
       if (nextIndex === false) {
         break;
@@ -130,8 +94,6 @@ export const getToChangeIndexes = ({ currentPlayer, index, neighbors, sideLength
 
 export const getNextTiles = ({ currentPlayer, index, prevTiles, sideLength }) => {
   const neighbors = getNeighborIndexes({ index, sideLength });
-  // eslint-disable-next-line
-  // console.log({ neighbors, tiles: prevTiles });
   const indexesToChange = getToChangeIndexes({
     currentPlayer,
     index,
@@ -139,12 +101,7 @@ export const getNextTiles = ({ currentPlayer, index, prevTiles, sideLength }) =>
     sideLength,
     tiles: prevTiles,
   });
-  // const arrays = getArrays({ index, sideLength, tiles: prevTiles });
-  // console.log(JSON.parse(JSON.stringify(neighbors)));
-  // console.log(JSON.parse(JSON.stringify({
-  //   arrays,
-  //   indexesToChange,
-  // })));
+  if (indexesToChange.length === 0) return { error: true, index };
   const nextTiles = [...prevTiles];
   // mutate nextTiles directly :|
   [index, ...indexesToChange].forEach((val) => { nextTiles[val].owner = currentPlayer; });

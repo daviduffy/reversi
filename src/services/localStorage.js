@@ -25,7 +25,6 @@ export const setDB = (updates) => new Promise((res /* rej */) => getDB()
   }));
 
 export const clearDB = (hard = false) => new Promise((res /* rej */) => {
-  // console.log({ 'would have saved this': nextState });
   if (hard) {
     window.localStorage.removeItem(databaseName);
   } else {
