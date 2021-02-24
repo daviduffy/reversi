@@ -27,12 +27,12 @@ export default {
 };
 </script>
 
-<style scoped lang="scss">
+<style lang="scss">
   .Board {
     display: grid;
-    grid-template-rows: repeat(10, 1fr);
-    grid-template-columns: repeat(10, 1fr);
-    max-width: 600px;
+    grid-template-rows: repeat(var(--side-length), 60px);
+    grid-template-columns: repeat(var(--side-length), 60px);
+    justify-content: center;
     margin: 0 auto;
   }
 </style>

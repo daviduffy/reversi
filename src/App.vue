@@ -1,16 +1,15 @@
 <template>
   <div id="app">
-    <div id="nav">
-      <router-link to="/">Game</router-link> |
-      <router-link to="/about">About</router-link>
-    </div>
-    <router-view/>
+    <game />
   </div>
 </template>
 
 <script>
+import Game from './views/Game.vue';
+
 export default {
   name: 'App',
+  components: { Game },
   // eslint-disable-next-line
   beforeMount: function() {
     this.$store.dispatch('startAppSetup')
@@ -20,6 +19,12 @@ export default {
 </script>
 
 <style lang="scss">
+* {
+  box-sizing: border-box;
+}
+html {
+  background-color: #009688;
+}
 #app {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;

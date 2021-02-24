@@ -4,6 +4,7 @@ import Vuex from 'vuex';
 import { getNewTiles } from '@/fixtures/tiles';
 import * as CONSTANTS from '@/constants/constants';
 import { getDB, setDB, clearDB } from '@/services/localStorage';
+import { getAnalytics } from '@/services/analytics';
 import {
   Event,
   reconstituteGame,
@@ -17,6 +18,7 @@ export default new Vuex.Store({
     ...CONSTANTS.DEFAULT_STATE,
     tilesProjection: getNewTiles(),
     error: false,
+    aggregateAnalytics: {},
   },
   mutations: {
     SET_SIDE_LENGTH(state, length) {
@@ -33,6 +35,9 @@ export default new Vuex.Store({
     },
     SET_CURRENT_PLAYER(state, nextPlayer) {
       state.currentPlayer = nextPlayer;
+    },
+    SET_AGGREGATE_ANALYTICS(state, nextAnalytics) {
+      state.aggregateAnalytics = nextAnalytics;
     },
     RECORD_EVENT(state, event) {
       state.events = [...state.events, event];
@@ -56,6 +61,8 @@ export default new Vuex.Store({
       const clickEvent = new Event({ type: CONSTANTS.CLICK_TILE, currentPlayer, ...protoEvent });
       const playerChangeEvent = new Event({ type: CONSTANTS.CHANGE_CURRENT_PLAYER, nextPlayer });
 
+      // console.log('here');
+
       // chain starts with startApplyClickTile to ensure move is valid before recording event
       return dispatch('startApplyClickTile', clickEvent)
         .then(({ valid, index }) => {
@@ -69,6 +76,7 @@ export default new Vuex.Store({
         })
         .then(() => dispatch('startRecordEvent', playerChangeEvent))
         .then(() => dispatch('startApplyChangePlayer', playerChangeEvent))
+        .then(() => dispatch('startTally'))
         .catch((error) => { console.warn(error); });
     },
     startApplyClickTile({ state, commit }, event) {
@@ -94,10 +102,19 @@ export default new Vuex.Store({
       const { events } = state;
       return setDB({ events });
     },
+    startTally({ state, commit }) {
+      const { gameOver, histogram: nextHistogram, moves } = getAnalytics({ state });
+      commit('SET_AGGREGATE_ANALYTICS', { gameOver, histogram: nextHistogram, moves });
+      return Promise.resolve();
+    },
+    // eslint-disable-next-line
     startUndo({ state, commit, dispatch }) {
       const { events } = state;
       // don't allow undo if it's the start of the game
-      if (events.length <= 4) return;
+      if (events.length <= 0) {
+        console.warn('first move, cannot undo');
+        return;
+      }
       let nextEvents = [...events];
       const last = events[events.length - 1];
       // an error occured and last tile couldn't be placed
@@ -117,8 +134,11 @@ export default new Vuex.Store({
       const { events, sideLength } = state;
       const payload = { events: prevEvents || events, sideLength };
       const { currentPlayer, tilesProjection } = reconstituteGame(payload);
+      // eslint-disable-next-line
+      const { gameOver, histogram: nextHistogram, moves } = getAnalytics({ state: { tilesProjection } });
       commit('SET_TILES_PROJECTION', tilesProjection);
       commit('SET_CURRENT_PLAYER', currentPlayer);
+      commit('SET_AGGREGATE_ANALYTICS', { gameOver, histogram: nextHistogram, moves });
     },
     startResetGame({ commit }) {
       const { sideLength, events, currentPlayer } = CONSTANTS.DEFAULT_STATE;

@@ -1,9 +1,9 @@
 <template>
-  <div class="Tile">
+  <div :class="containerClasses">
     <button
-      :class="classes"
+      :class="buttonClasses"
       @click="handleClick"
-    >{{ index }}
+    >
   </button>
   </div>
 </template>
@@ -22,11 +22,18 @@ export default {
     },
   },
   computed: {
-    classes() {
+    buttonClasses() {
       const { owner } = this;
       return {
         Tile__button: true,
-        [`Tile__button--${owner}`]: owner,
+        [`Tile__button--${owner || 'vacant'}`]: true,
+      };
+    },
+    containerClasses() {
+      const { owner } = this;
+      return {
+        Tile: true,
+        Tile__owned: owner,
       };
     },
   },
@@ -46,6 +53,16 @@ export default {
   height: 60px;
   width: 60px;
   position: relative;
+  border-top: 1px solid #0e0e0e;
+  border-left: 1px solid #0e0e0e;
+}
+
+.Tile:nth-child(8n) {
+  border-right: 1px solid #0e0e0e;
+}
+
+.Tile:nth-child(n + 57) {
+  border-bottom: 1px solid #0e0e0e;
 }
 
 .Tile__button {
@@ -57,6 +74,12 @@ export default {
   border-radius: 50%;
   display: block;
   box-shadow: 0 2px 4px rgba(0,0,0,.5);
+  cursor: pointer;
+}
+
+.Tile__button--vacant {
+  background: none;
+  box-shadow: initial;
 }
 
 .Tile__button--1 {
